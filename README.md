@@ -270,3 +270,162 @@ $this->power->turnOn()
 → "💡 Light is shining!"
 
 ```
+
+
+## PHP CORE 🧩 Folder Structure
+
+```swift
+container-demo/
+│
+├── index.php
+├── Container.php
+├── PowerInterface.php
+├── Fan.php
+├── Light.php
+├── TV.php
+└── PowerController.php
+```
+### 📄 1️⃣ PowerInterface.php
+```php
+<?php
+
+interface PowerInterface {
+    public function turnOn();
+}
+```
+### 📄 2️⃣ Fan.php
+```php
+<?php
+
+require_once 'PowerInterface.php';
+
+class Fan implements PowerInterface {
+    public function turnOn() {
+        echo "🌀 Fan is spinning!<br>";
+    }
+}
+```
+
+### 📄 3️⃣ Light.php
+```php
+<?php
+
+require_once 'PowerInterface.php';
+
+class Light implements PowerInterface {
+    public function turnOn() {
+        echo "💡 Light is shining!<br>";
+    }
+}
+```
+
+### 📄 4️⃣ TV.php
+```php
+<?php
+
+require_once 'PowerInterface.php';
+
+class TV implements PowerInterface {
+    public function turnOn() {
+        echo "📺 TV is playing!<br>";
+    }
+}
+```
+
+### 📄 5️⃣ Container.php
+
+```php
+<?php
+
+class Container {
+    protected array $bindings = [];
+
+    // Register a binding (like app()->bind())
+    public function bind($abstract, $concrete)
+    {
+        $this->bindings[$abstract] = $concrete;
+    }
+
+    // Resolve (like app()->make())
+    public function make($abstract)
+    {
+        if (isset($this->bindings[$abstract])) {
+            return $this->bindings[$abstract]($this);
+        }
+
+        throw new Exception("Nothing bound for {$abstract}");
+    }
+}
+```
+
+### 📄 6️⃣ PowerController.php
+```php
+<?php
+
+require_once 'PowerInterface.php';
+
+class PowerController {
+    protected PowerInterface $power;
+
+    public function __construct(PowerInterface $power)
+    {
+        $this->power = $power;
+    }
+
+    public function start()
+    {
+        $this->power->turnOn();
+    }
+}
+```
+### 📄 7️⃣ index.php
+```php
+<?php
+
+require_once 'Container.php';
+require_once 'Fan.php';
+require_once 'Light.php';
+require_once 'TV.php';
+require_once 'PowerController.php';
+
+// Create the container instance
+$container = new Container();
+
+// Register a binding (like Laravel's $this->app->bind)
+$container->bind(PowerInterface::class, function($app) {
+    $device = $_GET['device'] ?? 'fan'; // default to fan
+
+    return match ($device) {
+        'tv' => new TV(),
+        'light' => new Light(),
+        default => new Fan(),
+    };
+});
+
+// Resolve dependency (simulate Laravel’s automatic injection)
+$power = $container->make(PowerInterface::class);
+$controller = new PowerController($power);
+
+// Execute method
+$controller->start();
+
+```
+### 🧠 How to Run
+```
+Save all files in a folder named container-demo.
+
+Open terminal inside that folder.
+
+Run:
+
+php -S localhost:8000
+
+
+Open browser and test:
+
+🔹 http://localhost:8000 → 🌀 Fan is spinning!
+
+🔹 http://localhost:8000?device=light → 💡 Light is shining!
+
+🔹 http://localhost:8000?device=tv → 📺 TV is playing!
+```
